@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.16)
+project(tailcut LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(MSVC)
+  add_compile_options(/W4 /WX /utf-8 /EHsc)
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+else()
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
+
+file(GLOB PF_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
+list(REMOVE_ITEM PF_SOURCES "${CMAKE_SOURCE_DIR}/src/main.cpp")
+add_library(tailcut_lib STATIC ${PF_SOURCES})
+target_include_directories(tailcut_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
+
+add_executable(tailcut "${CMAKE_SOURCE_DIR}/src/main.cpp")
+target_link_libraries(tailcut PRIVATE tailcut_lib)
+
+enable_testing()
+file(GLOB PF_TESTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/*_test.cpp")
+foreach(test_source ${PF_TESTS})
+  get_filename_component(test_name "${test_source}" NAME_WE)
+  add_executable(${test_name} "${test_source}")
+  target_link_libraries(${test_name} PRIVATE tailcut_lib)
+  target_include_directories(${test_name} PRIVATE "${CMAKE_SOURCE_DIR}/tests")
+  add_test(NAME ${test_name} COMMAND ${test_name})
+endforeach()
